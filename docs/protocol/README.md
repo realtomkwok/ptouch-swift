@@ -72,7 +72,9 @@ The P710BT is Bluetooth 2.1 + EDR Classic. Its SDP records list two RFCOMM chann
 | 1 | Apple iAP2: sends `FF 55 02 00 EE 10` (link detect) repeatedly and ignores raster commands | iOS/iPadOS through ExternalAccessory (MFi) |
 | 2 | Plain serial: the raster protocol, same bytes as USB | macOS through IOBluetooth |
 
-- On channel 2, a status request returns the same 32-byte reply as over USB.
+- On channel 2, a status request returns the same 32-byte reply as over USB, and a
+  `.spec` test page (213 lines, 2394 bytes) printed with the same status flow:
+  phase change to printing, then "printing completed" about 8 s after sending.
 - The serial port macOS creates after pairing (`/dev/cu.brothersPT-P710BLabelPr`) opens
   channel 1, so it gets no status reply. Open channel 2 with IOBluetooth instead.
 - Brother's user guide says the printer "does not support Bluetooth connections for
