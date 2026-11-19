@@ -93,3 +93,14 @@ The P710BT is Bluetooth 2.1 + EDR Classic. Its SDP records list two RFCOMM chann
   number; without it, IOKit finds nothing.
 - A `.spec` test page printed through `USBTransport` with the same status flow as
   Bluetooth, "printing completed" about 7.5 s after sending.
+
+## iOS ExternalAccessory (observed, 2026-11-20)
+
+- On an iPhone 13 Pro paired with the printer, `EAAccessoryManager` lists the
+  P710BT with protocol string `com.brother.ptcbp` once the app declares it in
+  `UISupportedExternalAccessoryProtocols`.
+- An `EASession` on that protocol carries the raster protocol unchanged: the same
+  32-byte status reply as USB, and a `.spec` test page (2394 bytes) printed with
+  "printing completed" about 7.6 s after sending.
+- No entitlement is needed for development builds. App Store release needs Brother
+  to approve the app for the accessory (MFi).

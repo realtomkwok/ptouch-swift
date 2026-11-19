@@ -8,6 +8,7 @@
 // Bluetooth needs NSBluetoothAlwaysUsageDescription, so run it from the app
 // bundle that Tools/hardware/make-testpage-app.sh builds (docs/hardware-testing.md).
 
+#if os(macOS)
 import Foundation
 import PTouchKit
 import PTouchKitTransports
@@ -94,20 +95,8 @@ func describe(_ s: PrinterStatus) {
 
 // MARK: Test page
 
-/// Frame, a pin-0 tick, a diagonal, a checker block, and one bar for the spec
-/// preset or two for the ptouch preset, so the printout shows which ran.
 func testPage(media: Media, lengthMM: Double, quirksName: String) -> LabelBitmap {
-    let w = dots(fromMillimetres: lengthMM, dpi: 180)
-    let h = media.printAreaPins
-    let bars = quirksName == "ptouch" ? [10..<14, 18..<22] : [10..<14]
-    return LabelBitmap(width: w, height: h) { x, y in
-        if x == 0 || x == w - 1 || y == 0 || y == h - 1 { return true }
-        if y < 4, (26..<30).contains(x) { return true } // pin 0 side
-        if bars.contains(where: { $0.contains(x) }) { return true }
-        if x >= 34, x - 34 == y { return true }
-        if x >= w - 50, x < w - 8, y >= 3, y < h - 3 { return (x / 4 + y / 4) % 2 == 0 }
-        return false
-    }
+    TestPage.bitmap(for: media, lengthMM: lengthMM, bars: quirksName == "ptouch" ? 2 : 1)
 }
 
 func mediaFor(widthMM: Double) -> Media? {
@@ -194,3 +183,6 @@ do {
     print("Error: \(error)")
     exit(1)
 }
+#else
+print("ptouchkit-testpage runs on macOS only.")
+#endif

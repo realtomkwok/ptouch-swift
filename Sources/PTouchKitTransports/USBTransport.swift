@@ -4,22 +4,6 @@ import IOKit
 import IOUSBHost
 import PTouchKit
 
-public enum TransportError: Error, CustomStringConvertible, Sendable {
-    case notFound(String)
-    case openFailed(String)
-    case writeFailed(String)
-    case notOpen
-
-    public var description: String {
-        switch self {
-        case .notFound(let s): "Printer not found: \(s)"
-        case .openFailed(let s): "Couldn't connect: \(s)"
-        case .writeFailed(let s): "Couldn't send: \(s)"
-        case .notOpen: "The connection isn't open"
-        }
-    }
-}
-
 /// USB connection through IOUSBHost: bulk OUT for commands, bulk IN for status
 /// (Raster Command Reference, Appendix A: endpoint 2 OUT, endpoint 1 IN).
 ///
