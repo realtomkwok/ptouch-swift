@@ -15,13 +15,14 @@ first.
 ## Where ptouch and the spec differ
 
 Observed from ptouch 1.1.0's output (golden fixtures). PTouchKit makes each one
-a quirk; the `.ptouch` preset reproduces ptouch, `.spec` follows the manual.
+a field of `EncoderQuirks`; the `.ptouch` preset reproduces ptouch, `.spec` follows the manual.
 
 | What | Spec | ptouch 1.1.0 |
 | --- | --- | --- |
 | Invalidate at job start | 100 × `00` (§2.1) | 200 × `00` |
 | `ESC i z` {n2} media type | `01` laminated, `11`/`17` heat-shrink (§4) | always `00` |
 | `ESC i z` {n9} | `00` first page, `01` other pages (§4) | always `00` |
-| `ESC i A` cut each N labels | not supported on P710BT (§3) | always sent, `01` |
+| `ESC i A` cut each N labels | not supported on P710BT (§3) | sent as `01` whenever auto cut is on |
+| Compressed raster line over 16 bytes | sent as one 17-byte literal (§4 "M") | sent as is (up to 21 bytes seen) |
 
 Which preset the real P710BT prefers is unverified on hardware.
