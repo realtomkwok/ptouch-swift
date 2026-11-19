@@ -2,7 +2,7 @@ import Testing
 @testable import PTouchKit
 
 /// Builds a status reply from the §4 "ESC i S" layout.
-private func reply(
+func reply(
     model: UInt8 = 0x66,
     error1: UInt8 = 0, error2: UInt8 = 0,
     width: UInt8 = 24, kind: UInt8 = 0x01,
@@ -101,5 +101,40 @@ struct PrinterStatusTests {
         var bad = reply()
         bad[2] = 0x41
         #expect(throws: PrinterStatus.ParseError.badHeader) { try PrinterStatus(bytes: bad) }
+    }
+}
+
+@Suite("Printer problems")
+struct PrinterProblemTests {
+    @Test func noneWhenReady() throws {
+        #expect(try PrinterStatus(bytes: reply()).problems.isEmpty)
+    }
+
+    @Test("Every error flag maps to a problem")
+    func everyFlag() throws {
+        let s = try PrinterStatus(bytes: reply(error1: 0x01 | 0x04 | 0x08 | 0x40, error2: 0x01 | 0x10 | 0x20, width: 0, kind: 0))
+        #expect(s.problems == [.coverOpen, .noTape, .cutterJam, .overheating, .wrongPowerAdapter, .wrongTape, .weakBatteries])
+    }
+
+    @Test("No tape without an error flag still reads as no tape")
+    func emptyMediaKind() throws {
+        #expect(try PrinterStatus(bytes: reply(width: 0, kind: 0)).problems == [.noTape])
+    }
+
+    @Test func incompatibleTape() throws {
+        #expect(try PrinterStatus(bytes: reply(kind: 0xFF)).problems == [.unsupportedTape])
+    }
+
+    @Test("Label made for 12 mm with 24 mm loaded")
+    func mismatch() throws {
+        let s = try PrinterStatus(bytes: reply(width: 24))
+        #expect(s.problem(printing: .tze12mm) == .wrongTape)
+        #expect(s.problem(printing: .tze24mm) == nil)
+    }
+
+    @Test("Every problem has text", arguments: PrinterProblem.allCases)
+    func text(problem: PrinterProblem) {
+        #expect(!problem.title.isEmpty)
+        #expect(problem.recovery.hasSuffix("."))
     }
 }
