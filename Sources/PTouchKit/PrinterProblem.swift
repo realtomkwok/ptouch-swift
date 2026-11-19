@@ -2,6 +2,7 @@
 ///
 /// The text is English. Apps that localise can switch on the case instead.
 public enum PrinterProblem: Sendable, Hashable, CaseIterable {
+    /// No tape, or the cover is open: the P710BT reports both as "no media".
     case noTape
     case cutterJam
     case weakBatteries
@@ -14,7 +15,7 @@ public enum PrinterProblem: Sendable, Hashable, CaseIterable {
     /// A short headline, e.g. for an alert title.
     public var title: String {
         switch self {
-        case .noTape: "No tape loaded"
+        case .noTape: "No tape detected"
         case .cutterJam: "The cutter is jammed"
         case .weakBatteries: "The battery is low"
         case .wrongPowerAdapter: "Wrong power adapter"
@@ -28,11 +29,11 @@ public enum PrinterProblem: Sendable, Hashable, CaseIterable {
     /// What to do about it.
     public var recovery: String {
         switch self {
-        case .noTape: "Put a tape cassette in the printer and close the cover."
+        case .noTape: "Check that a tape cassette is in the printer and the cover is closed."
         case .cutterJam: "Turn the printer off, open the cover and clear any tape caught in the cutter."
         case .weakBatteries: "Charge the printer or plug in its power adapter."
         case .wrongPowerAdapter: "Use the power adapter that came with the printer."
-        case .wrongTape: "Load the tape this label was made for, or change the label to match the loaded tape."
+        case .wrongTape: "Load the tape this label was made for, or change the label to match the loaded tape. Then press the printer's power button to clear the error."
         case .coverOpen: "Close the tape cassette cover."
         case .overheating: "Let the printer cool down for a few minutes, then print again."
         case .unsupportedTape: "Use a Brother TZe tape or heat-shrink tube the printer supports."
