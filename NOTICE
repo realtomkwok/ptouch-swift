@@ -1,0 +1,12 @@
+PTouchKit
+Copyright 2026 Tom Kwok
+
+This product is licensed under the Apache License, Version 2.0.
+
+PTouchKit is tested for byte-for-byte compatibility against ptouch
+(https://github.com/nbuchwitz/ptouch) by Nicolai Buchwitz, licensed under
+LGPL-2.1-or-later. ptouch is used only as an external test oracle and is not
+distributed as part of PTouchKit.
+
+P-touch is a trademark of Brother Industries, Ltd. This project is not
+affiliated with or endorsed by Brother.
