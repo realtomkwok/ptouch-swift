@@ -5,7 +5,7 @@ A platform-independent Swift package for the Brother PT-P710BT label printer
 printer status. It uses Foundation only, so it builds on Linux as well as on
 Apple platforms. Transports (USB, Bluetooth, network) are supplied by the host.
 
-Status: early. The package itself doesn't exist yet.
+Status: early. Model and media tables are in; the raster encoder and status parser are in progress.
 
 ## How it's written
 
