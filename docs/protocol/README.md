@@ -45,7 +45,8 @@ Status reply with 24 mm white/black laminated tape, ready:
 - Wrong tape: a 12 mm `.spec` job with 24 mm tape loaded is rejected before printing
   with "error occurred" (type `02h`) and error 2 bit 0 (wrong media, `09h` = `01h`). The
   error stays latched: a later invalidate + initialize + status request still
-  reports it.
+  reports it. Pressing the power button (or turning the printer off and on)
+  clears it; the next status reply is ready with no errors.
 
 ```
 80 20 42 30 76 30 00 00 00 01 18 01 01 00 00 40 00 00 02 01 00 00 00 00 01 08 00 00 00 00 00 00

@@ -32,7 +32,7 @@ public enum PrinterProblem: Sendable, Hashable, CaseIterable {
         case .cutterJam: "Turn the printer off, open the cover and clear any tape caught in the cutter."
         case .weakBatteries: "Charge the printer or plug in its power adapter."
         case .wrongPowerAdapter: "Use the power adapter that came with the printer."
-        case .wrongTape: "Load the tape this label was made for, or change the label to match the loaded tape."
+        case .wrongTape: "Load the tape this label was made for, or change the label to match the loaded tape. Then press the printer's power button to clear the error."
         case .coverOpen: "Close the tape cassette cover."
         case .overheating: "Let the printer cool down for a few minutes, then print again."
         case .unsupportedTape: "Use a Brother TZe tape or heat-shrink tube the printer supports."
