@@ -26,3 +26,18 @@ a field of `EncoderQuirks`; the `.ptouch` preset reproduces ptouch, `.spec` foll
 | Compressed raster line over 16 bytes | sent as one 17-byte literal (§4 "M") | sent as is (up to 21 bytes seen) |
 
 Which preset the real P710BT prefers is unverified on hardware.
+
+## Observed on a real PT-P710BT (USB, 2026-11-19)
+
+Status reply with 24 mm white/black laminated tape, ready:
+
+```
+80 20 42 30 76 30 00 00 00 00 18 01 01 00 00 00 00 00 00 00 00 00 00 00 01 08 00 00 00 00 00 00
+```
+
+- Model code (offset 4) is `76h` ('v'); the spec lists only E550W ('f') and P750W ('h').
+- Offset 12 ("number of colours", spec: fixed 00h) reads `01h`.
+- After a job: a phase-change status (type `06h`, phase type `01h` printing), then
+  "printing completed" (type `01h`). Offset 15 echoes the "ESC i M" mode (`40h`, auto cut).
+- A job encoded with the `.spec` quirks printed without error: the printer accepts
+  media type `01h` in "ESC i z" and doesn't need "ESC i A".

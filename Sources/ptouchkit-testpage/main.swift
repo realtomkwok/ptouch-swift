@@ -25,13 +25,14 @@ struct Options {
     var tapeMM: Double?
     var quirksName = "spec"
     var lengthMM = 30.0
+    var hex: String?
 
     var quirks: EncoderQuirks { quirksName == "ptouch" ? .ptouch : .spec }
 }
 
 func usage() -> Never {
     print("""
-    usage: ptouchkit-testpage status --device PATH
+    usage: ptouchkit-testpage status (--device PATH | --hex "80 20 42 …")
            ptouchkit-testpage print (--device PATH | --out FILE --tape MM) [--quirks spec|ptouch] [--length MM]
     """)
     exit(2)
@@ -54,11 +55,12 @@ func parse(_ args: [String]) -> Options {
         case "--tape": guard let mm = Double(value()) else { usage() }; o.tapeMM = mm
         case "--quirks": o.quirksName = value(); guard ["spec", "ptouch"].contains(o.quirksName) else { usage() }
         case "--length": guard let mm = Double(value()) else { usage() }; o.lengthMM = mm
+        case "--hex": o.hex = value()
         default: usage()
         }
         i += 1
     }
-    if o.command == "status", o.device == nil { usage() }
+    if o.command == "status", o.device == nil, o.hex == nil { usage() }
     if o.command == "print", o.device == nil, o.out == nil || o.tapeMM == nil { usage() }
     return o
 }
@@ -179,15 +181,28 @@ let encoder = RasterEncoder(quirks: options.quirks)
 let reset: [UInt8] = [UInt8](repeating: 0, count: 100) + [0x1B, 0x40]
 
 do {
+    if let hexReply = options.hex {
+        let bytes = hexReply.split(whereSeparator: { $0 == " " || $0 == ":" }).compactMap { UInt8($0, radix: 16) }
+        print("Status:")
+        describe(try PrinterStatus(bytes: bytes))
+        exit(0)
+    }
     var port: Port?
     var media: Media?
 
     if let device = options.device {
         let p = try Port(path: device)
         port = p
-        try p.write(reset + statusRequestCommand)
-        guard let status = try p.readStatus(timeout: 5) else {
-            throw PortError(description: "No status reply within 5 s. Is the printer on and paired?")
+        // Opening the port starts the Bluetooth link, which can take a few
+        // seconds; a request sent before it's up is lost, so retry.
+        var reply: PrinterStatus?
+        for attempt in 1...4 where reply == nil {
+            if attempt > 1 { print("No reply yet, retrying (\(attempt)/4)…") }
+            try p.write(reset + statusRequestCommand)
+            reply = try p.readStatus(timeout: 5)
+        }
+        guard let status = reply else {
+            throw PortError(description: "No status reply after 4 tries. Is the printer on and paired?")
         }
         print("Status:")
         describe(status)
