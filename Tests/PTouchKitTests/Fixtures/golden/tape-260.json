@@ -1,0 +1,19 @@
+{
+  "name": "tape-260",
+  "mediaID": 260,
+  "labels": [
+    "tape-260.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "tape-260.bin"
+}

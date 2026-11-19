@@ -1,0 +1,19 @@
+{
+  "name": "tape-259",
+  "mediaID": 259,
+  "labels": [
+    "tape-259.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "tape-259.bin"
+}

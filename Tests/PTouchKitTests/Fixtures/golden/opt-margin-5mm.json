@@ -1,0 +1,19 @@
+{
+  "name": "opt-margin-5mm",
+  "mediaID": 259,
+  "labels": [
+    "opt-margin-5mm.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 5.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-margin-5mm.bin"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "multi-3-chain",
+  "mediaID": 259,
+  "labels": [
+    "multi-3-chain.0.pbm",
+    "multi-3-chain.1.pbm",
+    "multi-3-chain.2.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": true,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "multi-3-chain.bin"
+}
