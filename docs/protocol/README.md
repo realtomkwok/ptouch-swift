@@ -83,3 +83,13 @@ The P710BT is Bluetooth 2.1 + EDR Classic. Its SDP records list two RFCOMM chann
   phones and tablets can't find it, and the other way round.
 - macOS kills any process that uses IOBluetooth without `NSBluetoothAlwaysUsageDescription`
   in its Info.plist (checked against the app that launched it).
+
+## USB with IOUSBHost (observed, 2026-11-19)
+
+- macOS configures the printer on plug-in (configuration 1) and publishes
+  `IOUSBHostInterface@0`, class 07h (printer). No driver claims it, so an app can
+  open it without a print queue.
+- Matching the interface needs `bConfigurationValue = 1` as well as the interface
+  number; without it, IOKit finds nothing.
+- A `.spec` test page printed through `USBTransport` with the same status flow as
+  Bluetooth, "printing completed" about 7.5 s after sending.

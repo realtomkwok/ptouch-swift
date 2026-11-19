@@ -148,7 +148,8 @@ public final class USBTransport: PrinterTransport, @unchecked Sendable {
     private func findInterface() -> io_service_t {
         let matching = IOUSBHostInterface.__createMatchingDictionary(
             withVendorID: NSNumber(value: vendorID), productID: NSNumber(value: productID),
-            bcdDevice: nil, interfaceNumber: 0, configurationValue: nil,
+            // IOKit interface matching needs the configuration value as well as the number.
+            bcdDevice: nil, interfaceNumber: 0, configurationValue: 1,
             interfaceClass: nil, interfaceSubclass: nil, interfaceProtocol: nil, speed: nil, productIDArray: nil
         ).takeRetainedValue()
         return IOServiceGetMatchingService(kIOMainPortDefault, matching)
