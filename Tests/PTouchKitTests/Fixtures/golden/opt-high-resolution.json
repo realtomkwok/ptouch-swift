@@ -1,0 +1,19 @@
+{
+  "name": "opt-high-resolution",
+  "mediaID": 259,
+  "labels": [
+    "opt-high-resolution.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": true,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-high-resolution.bin"
+}

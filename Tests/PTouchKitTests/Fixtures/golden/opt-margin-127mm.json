@@ -1,0 +1,19 @@
+{
+  "name": "opt-margin-127mm",
+  "mediaID": 259,
+  "labels": [
+    "opt-margin-127mm.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 127.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-margin-127mm.bin"
+}

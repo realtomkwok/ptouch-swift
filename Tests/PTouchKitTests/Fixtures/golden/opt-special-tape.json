@@ -1,0 +1,19 @@
+{
+  "name": "opt-special-tape",
+  "mediaID": 259,
+  "labels": [
+    "opt-special-tape.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": true,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-special-tape.bin"
+}

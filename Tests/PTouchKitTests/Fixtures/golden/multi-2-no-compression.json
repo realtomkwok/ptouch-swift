@@ -1,0 +1,20 @@
+{
+  "name": "multi-2-no-compression",
+  "mediaID": 260,
+  "labels": [
+    "multi-2-no-compression.0.pbm",
+    "multi-2-no-compression.1.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "none",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "multi-2-no-compression.bin"
+}

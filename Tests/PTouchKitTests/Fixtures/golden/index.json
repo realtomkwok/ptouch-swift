@@ -1,0 +1,28 @@
+{
+  "generator": "Tools/golden/generate.py",
+  "ptouch": "1.1.0",
+  "fixtures": [
+    "tape-263",
+    "tape-257",
+    "tape-258",
+    "tape-259",
+    "tape-260",
+    "tape-261",
+    "opt-no-compression",
+    "opt-high-resolution",
+    "opt-no-auto-cut",
+    "opt-chain",
+    "opt-mirror",
+    "opt-special-tape",
+    "opt-margin-5mm",
+    "opt-margin-2_1mm",
+    "opt-margin-127mm",
+    "opt-no-feed",
+    "content-all-white",
+    "content-all-black",
+    "content-long",
+    "multi-3",
+    "multi-3-chain",
+    "multi-2-no-compression"
+  ]
+}

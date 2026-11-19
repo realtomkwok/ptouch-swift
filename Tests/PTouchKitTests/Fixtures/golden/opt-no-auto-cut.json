@@ -1,0 +1,19 @@
+{
+  "name": "opt-no-auto-cut",
+  "mediaID": 259,
+  "labels": [
+    "opt-no-auto-cut.0.pbm"
+  ],
+  "options": {
+    "autoCut": false,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-no-auto-cut.bin"
+}

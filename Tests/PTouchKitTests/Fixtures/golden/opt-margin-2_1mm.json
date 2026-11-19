@@ -1,0 +1,19 @@
+{
+  "name": "opt-margin-2_1mm",
+  "mediaID": 259,
+  "labels": [
+    "opt-margin-2_1mm.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.1,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-margin-2_1mm.bin"
+}

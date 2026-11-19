@@ -1,0 +1,19 @@
+{
+  "name": "content-all-white",
+  "mediaID": 259,
+  "labels": [
+    "content-all-white.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "content-all-white.bin"
+}

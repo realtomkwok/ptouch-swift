@@ -1,0 +1,19 @@
+{
+  "name": "opt-no-feed",
+  "mediaID": 259,
+  "labels": [
+    "opt-no-feed.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": false
+  },
+  "quirks": "ptouch",
+  "expected": "opt-no-feed.bin"
+}

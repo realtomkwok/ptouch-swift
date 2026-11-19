@@ -1,0 +1,19 @@
+{
+  "name": "opt-no-compression",
+  "mediaID": 259,
+  "labels": [
+    "opt-no-compression.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "none",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-no-compression.bin"
+}

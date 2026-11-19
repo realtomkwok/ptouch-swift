@@ -1,0 +1,19 @@
+{
+  "name": "opt-chain",
+  "mediaID": 259,
+  "labels": [
+    "opt-chain.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": true,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true
+  },
+  "quirks": "ptouch",
+  "expected": "opt-chain.bin"
+}
