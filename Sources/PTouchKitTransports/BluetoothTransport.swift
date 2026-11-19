@@ -40,7 +40,7 @@ public final class BluetoothTransport: NSObject, PrinterTransport, IOBluetoothRF
 
     public func open() async throws {
         if lock.withLock({ channel != nil }) { return }
-        try BluetoothThread.shared.run { [self] in
+        try RunLoopThread.shared.run { [self] in
             guard let device = IOBluetoothDevice(addressString: address) else {
                 throw TransportError.notFound("no Bluetooth device \(address)")
             }
@@ -64,7 +64,7 @@ public final class BluetoothTransport: NSObject, PrinterTransport, IOBluetoothRF
 
     public func write(_ bytes: [UInt8]) async throws {
         guard let channel = lock.withLock({ self.channel }) else { throw TransportError.notOpen }
-        try BluetoothThread.shared.run {
+        try RunLoopThread.shared.run {
             let mtu = max(1, Int(channel.getMTU()))
             var offset = 0
             while offset < bytes.count {
@@ -100,7 +100,7 @@ public final class BluetoothTransport: NSObject, PrinterTransport, IOBluetoothRF
             defer { self.channel = nil; self.device = nil; buffer = [] }
             return (self.channel, self.device)
         }
-        try? BluetoothThread.shared.run {
+        try? RunLoopThread.shared.run {
             channel?.close()
             device?.closeConnection()
         }
@@ -120,43 +120,4 @@ public final class BluetoothTransport: NSObject, PrinterTransport, IOBluetoothRF
     }
 }
 
-/// A thread with its own run loop. IOBluetooth delivers channel callbacks on
-/// the run loop of the thread that opened the channel, which async code
-/// doesn't provide.
-final class BluetoothThread: Thread, @unchecked Sendable {
-    static let shared: BluetoothThread = {
-        let t = BluetoothThread()
-        t.name = "PTouchKit.Bluetooth"
-        t.start()
-        t.ready.wait()
-        return t
-    }()
-
-    private let ready = DispatchSemaphore(value: 0)
-    private var runLoop: CFRunLoop?
-
-    override func main() {
-        runLoop = CFRunLoopGetCurrent()
-        // A port keeps the run loop running when no other source is attached.
-        RunLoop.current.add(NSMachPort(), forMode: .default)
-        ready.signal()
-        while !isCancelled {
-            RunLoop.current.run(mode: .default, before: .distantFuture)
-        }
-    }
-
-    /// Runs `body` on this thread and waits for it.
-    func run<T>(_ body: @escaping () throws -> T) throws -> T {
-        if Thread.current === self { return try body() }
-        let done = DispatchSemaphore(value: 0)
-        nonisolated(unsafe) var result: Result<T, Error>!
-        CFRunLoopPerformBlock(runLoop, CFRunLoopMode.defaultMode.rawValue) {
-            result = Result { try body() }
-            done.signal()
-        }
-        CFRunLoopWakeUp(runLoop)
-        done.wait()
-        return try result.get()
-    }
-}
 #endif

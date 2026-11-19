@@ -11,13 +11,14 @@ let package = Package(
     ],
     targets: [
         .target(name: "PTouchKit"),
-        // macOS transports (IOUSBHost, IOBluetooth). Compiles to nothing elsewhere.
+        // Transports: macOS USB (IOUSBHost) and Bluetooth (IOBluetooth), iOS ExternalAccessory.
         .target(
             name: "PTouchKitTransports",
             dependencies: ["PTouchKit"],
             linkerSettings: [
                 .linkedFramework("IOUSBHost", .when(platforms: [.macOS])),
                 .linkedFramework("IOBluetooth", .when(platforms: [.macOS])),
+                .linkedFramework("ExternalAccessory", .when(platforms: [.iOS])),
             ]
         ),
         // Developer tool for hardware tests. Not part of the library.
