@@ -1,30 +1,17 @@
 # Testing on a real PT-P710BT
 
 `ptouchkit-testpage` reads the printer's status and prints a 30 mm test page
-encoded by PTouchKit. The page shows a frame, a short tick on the pin-0 edge, a
+encoded by PTouchKit. It works over USB today. The page shows a frame, a short tick on the pin-0 edge, a
 diagonal, a checker block, and **one bar** for the `.spec` quirk preset or **two
 bars** for `.ptouch`.
 
 ## Bluetooth (macOS)
 
-1. Turn the printer on and pair it in System Settings → Bluetooth. macOS then
-   creates a serial port, e.g. `/dev/cu.brothersPT-P710BLabelPr` (`ls /dev/cu.*`).
-2. Read the status (prints nothing):
-
-   ```bash
-   swift run ptouchkit-testpage status --device /dev/cu.brothersPT-P710BLabelPr
-   ```
-
-3. Print with each preset and compare the labels:
-
-   ```bash
-   swift run ptouchkit-testpage print --device /dev/cu.brothersPT-P710BLabelPr --quirks spec
-   swift run ptouchkit-testpage print --device /dev/cu.brothersPT-P710BLabelPr --quirks ptouch
-   ```
-
-The tool reads the loaded tape from the status reply, refuses to print if the
-printer reports a problem, then prints each status the printer sends until
-"printing completed".
+Not yet. The serial port macOS creates after pairing
+(`/dev/cu.brothersPT-P710BLabelPr`) talks to RFCOMM channel 1, which is Apple's iAP2
+accessory channel, so the printer never answers there. Printing over Bluetooth
+needs IOBluetooth on channel 2 (see `docs/protocol/README.md`); the test-page tool
+will gain that with the macOS transports.
 
 ## USB
 
