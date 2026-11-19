@@ -1,26 +1,27 @@
 // ptouchkit-testpage: read a PT-P710BT's status and print a test page.
 //
-//   ptouchkit-testpage status --device /dev/cu.PT-P710BT1234
-//   ptouchkit-testpage print  --device /dev/cu.PT-P710BT1234 [--quirks spec|ptouch]
-//   ptouchkit-testpage print  --out job.bin --tape 12 [--quirks spec|ptouch]
+//   ptouchkit-testpage status (--usb | --bluetooth [ADDRESS] | --hex "80 20 42 …")
+//   ptouchkit-testpage print  (--usb | --bluetooth [ADDRESS]) [--quirks spec|ptouch] [--length MM]
+//   ptouchkit-testpage print  --out job.bin --tape MM [--quirks spec|ptouch]
+//   ptouchkit-testpage list
 //
-// The device is the Bluetooth serial port macOS creates after pairing, or any
-// character device that passes bytes straight to the printer. With --out, the
-// job is written to a file instead; send it over USB with `lp -d <queue> -o raw job.bin`.
+// Bluetooth needs NSBluetoothAlwaysUsageDescription, so run it from the app
+// bundle that Tools/hardware/make-testpage-app.sh builds (docs/hardware-testing.md).
 
 import Foundation
 import PTouchKit
-#if canImport(Darwin)
-import Darwin
-#elseif canImport(Glibc)
-import Glibc
-#endif
+import PTouchKitTransports
 
 // MARK: Arguments
 
+enum Connection {
+    case usb
+    case bluetooth(address: String?)
+}
+
 struct Options {
     var command = ""
-    var device: String?
+    var connection: Connection?
     var out: String?
     var tapeMM: Double?
     var quirksName = "spec"
@@ -32,15 +33,16 @@ struct Options {
 
 func usage() -> Never {
     print("""
-    usage: ptouchkit-testpage status (--device PATH | --hex "80 20 42 …")
-           ptouchkit-testpage print (--device PATH | --out FILE --tape MM) [--quirks spec|ptouch] [--length MM]
+    usage: ptouchkit-testpage status (--usb | --bluetooth [ADDRESS] | --hex "80 20 42 …")
+           ptouchkit-testpage print (--usb | --bluetooth [ADDRESS] | --out FILE --tape MM) [--quirks spec|ptouch] [--length MM]
+           ptouchkit-testpage list
     """)
     exit(2)
 }
 
 func parse(_ args: [String]) -> Options {
     var o = Options()
-    guard let command = args.first, ["status", "print"].contains(command) else { usage() }
+    guard let command = args.first, ["status", "print", "list"].contains(command) else { usage() }
     o.command = command
     var i = 1
     func value() -> String {
@@ -50,7 +52,10 @@ func parse(_ args: [String]) -> Options {
     }
     while i < args.count {
         switch args[i] {
-        case "--device": o.device = value()
+        case "--usb": o.connection = .usb
+        case "--bluetooth":
+            if i + 1 < args.count, !args[i + 1].hasPrefix("--") { o.connection = .bluetooth(address: value()) }
+            else { o.connection = .bluetooth(address: nil) }
         case "--out": o.out = value()
         case "--tape": guard let mm = Double(value()) else { usage() }; o.tapeMM = mm
         case "--quirks": o.quirksName = value(); guard ["spec", "ptouch"].contains(o.quirksName) else { usage() }
@@ -60,81 +65,16 @@ func parse(_ args: [String]) -> Options {
         }
         i += 1
     }
-    if o.command == "status", o.device == nil, o.hex == nil { usage() }
-    if o.command == "print", o.device == nil, o.out == nil || o.tapeMM == nil { usage() }
+    if o.command == "status", o.connection == nil, o.hex == nil { usage() }
+    if o.command == "print", o.connection == nil, o.out == nil || o.tapeMM == nil { usage() }
     return o
 }
 
-// MARK: Serial port
+// MARK: Output
 
-struct PortError: Error, CustomStringConvertible {
+struct ToolError: Error, CustomStringConvertible {
     let description: String
 }
-
-final class Port {
-    let fd: Int32
-
-    init(path: String) throws {
-        fd = open(path, O_RDWR | O_NOCTTY)
-        guard fd >= 0 else { throw PortError(description: "Can't open \(path): \(String(cString: strerror(errno)))") }
-        var t = termios()
-        if tcgetattr(fd, &t) == 0 {
-            cfmakeraw(&t)
-            _ = tcsetattr(fd, TCSANOW, &t)
-        }
-    }
-
-    deinit { close(fd) }
-
-    func write(_ bytes: [UInt8]) throws {
-        var offset = 0
-        while offset < bytes.count {
-            let n = bytes[offset...].withUnsafeBytes { buffer in
-                #if canImport(Darwin)
-                Darwin.write(fd, buffer.baseAddress, buffer.count)
-                #else
-                Glibc.write(fd, buffer.baseAddress, buffer.count)
-                #endif
-            }
-            guard n > 0 else { throw PortError(description: "Write failed: \(String(cString: strerror(errno)))") }
-            offset += n
-        }
-    }
-
-    /// Reads exactly `count` bytes, or returns what arrived before `timeout` seconds.
-    func read(count: Int, timeout: Double) -> [UInt8] {
-        var out: [UInt8] = []
-        let deadline = Date().addingTimeInterval(timeout)
-        var buffer = [UInt8](repeating: 0, count: count)
-        while out.count < count {
-            let remaining = deadline.timeIntervalSinceNow
-            guard remaining > 0 else { break }
-            var pfd = pollfd(fd: fd, events: Int16(POLLIN), revents: 0)
-            guard poll(&pfd, 1, Int32(remaining * 1000)) > 0 else { break }
-            let n = buffer.withUnsafeMutableBytes { b in
-                #if canImport(Darwin)
-                Darwin.read(fd, b.baseAddress, count - out.count)
-                #else
-                Glibc.read(fd, b.baseAddress, count - out.count)
-                #endif
-            }
-            guard n > 0 else { break }
-            out += buffer[0..<n]
-        }
-        return out
-    }
-
-    func readStatus(timeout: Double) throws -> PrinterStatus? {
-        let bytes = read(count: PrinterStatus.byteCount, timeout: timeout)
-        if bytes.isEmpty { return nil }
-        guard bytes.count == PrinterStatus.byteCount else {
-            throw PortError(description: "Short status reply (\(bytes.count) bytes): \(hex(bytes))")
-        }
-        return try PrinterStatus(bytes: bytes)
-    }
-}
-
-// MARK: Output
 
 func hex(_ bytes: [UInt8]) -> String {
     bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
@@ -174,65 +114,80 @@ func mediaFor(widthMM: Double) -> Media? {
     Media.allTZe.first { abs($0.nominalWidthMM - widthMM) < 0.6 }
 }
 
-// MARK: Main
+// MARK: Running
 
-let options = parse(Array(CommandLine.arguments.dropFirst()))
-let encoder = RasterEncoder(quirks: options.quirks)
-let reset: [UInt8] = [UInt8](repeating: 0, count: 100) + [0x1B, 0x40]
-
-do {
-    if let hexReply = options.hex {
-        let bytes = hexReply.split(whereSeparator: { $0 == " " || $0 == ":" }).compactMap { UInt8($0, radix: 16) }
-        print("Status:")
-        describe(try PrinterStatus(bytes: bytes))
-        exit(0)
+func makeTransport(_ connection: Connection) throws -> any PrinterTransport {
+    switch connection {
+    case .usb:
+        guard USBTransport.isConnected() else { throw ToolError(description: "No PT-P710BT on USB.") }
+        print("Connection: USB")
+        return USBTransport()
+    case .bluetooth(let address):
+        let resolved: String
+        if let address {
+            resolved = address
+        } else {
+            let found = BluetoothTransport.pairedPrinters()
+            guard let first = found.first else { throw ToolError(description: "No paired PT-P710BT. Pair it in System Settings first.") }
+            resolved = first.address
+        }
+        print("Connection: Bluetooth \(resolved), RFCOMM channel \(BluetoothTransport.serialChannel)")
+        return BluetoothTransport(address: resolved)
     }
-    var port: Port?
-    var media: Media?
+}
 
-    if let device = options.device {
-        let p = try Port(path: device)
-        port = p
-        // Opening the port starts the Bluetooth link, which can take a few
-        // seconds; a request sent before it's up is lost, so retry.
-        var reply: PrinterStatus?
-        for attempt in 1...4 where reply == nil {
-            if attempt > 1 { print("No reply yet, retrying (\(attempt)/4)…") }
-            try p.write(reset + statusRequestCommand)
-            reply = try p.readStatus(timeout: 5)
-        }
-        guard let status = reply else {
-            throw PortError(description: "No status reply after 4 tries. Is the printer on and paired?")
-        }
+func run<T: PrinterTransport>(_ transport: T, options: Options) async throws {
+    let client = PrinterClient(transport: transport)
+    try await transport.open()
+    do {
+        let status = try await client.status()
         print("Status:")
         describe(status)
-        if options.command == "status" { exit(0) }
-        if let first = status.problems.first { throw PortError(description: "Not printing: \(first.title).") }
-        media = status.loadedMedia()
-    }
-    if let mm = options.tapeMM {
-        guard let m = mediaFor(widthMM: mm) else { throw PortError(description: "No TZe tape is \(mm) mm wide.") }
-        if let loaded = media, loaded != m { throw PortError(description: "Loaded tape is \(loaded.name), not \(m.name).") }
-        media = m
-    }
-    guard let media else { throw PortError(description: "Unknown tape.") }
+        if options.command == "status" { await transport.close(); return }
 
-    let page = testPage(media: media, lengthMM: options.lengthMM, quirksName: options.quirksName)
-    let job = try encoder.encode([page], media: media)
-    print("Job: \(media.name), \(page.width) lines, quirks \(options.quirksName), \(job.count) bytes")
-
-    if let out = options.out {
-        try Data(job).write(to: URL(fileURLWithPath: out))
-        print("Wrote \(out)")
+        if let first = status.problems.first { throw ToolError(description: "Not printing: \(first.title).") }
+        guard let media = status.loadedMedia() else { throw ToolError(description: "Unknown tape.") }
+        if let mm = options.tapeMM, let wanted = mediaFor(widthMM: mm), wanted != media {
+            throw ToolError(description: "Loaded tape is \(media.name), not \(wanted.name).")
+        }
+        let page = testPage(media: media, lengthMM: options.lengthMM, quirksName: options.quirksName)
+        let job = try RasterEncoder(quirks: options.quirks).encode([page], media: media)
+        print("Job: \(media.name), \(page.width) lines, quirks \(options.quirksName), \(job.count) bytes")
+        let start = ContinuousClock.now
+        let final = try await client.print(job) { s in
+            print("Status: \(s.statusType), phase \(s.phase)")
+        }
+        print("Printing completed in \(ContinuousClock.now - start). Final status:")
+        describe(final)
+    } catch {
+        await transport.close()
+        throw error
     }
-    if let port {
-        try port.write(job)
-        print("Sent. Waiting for the printer…")
-        while let status = try port.readStatus(timeout: 30) {
+    await transport.close()
+}
+
+let options = parse(Array(CommandLine.arguments.dropFirst()))
+
+do {
+    switch options.command {
+    case "list":
+        print("USB: \(USBTransport.isConnected() ? "PT-P710BT connected" : "none")")
+        let paired = BluetoothTransport.pairedPrinters()
+        if paired.isEmpty { print("Bluetooth: no paired PT-P710BT") }
+        for p in paired { print("Bluetooth: \(p.name) \(p.address)") }
+    default:
+        if let hexReply = options.hex {
+            let bytes = hexReply.split(whereSeparator: { $0 == " " || $0 == ":" }).compactMap { UInt8($0, radix: 16) }
             print("Status:")
-            describe(status)
-            if status.statusType == .printingCompleted { print("Printing completed."); break }
-            if status.statusType == .errorOccurred { throw PortError(description: "The printer reported an error.") }
+            describe(try PrinterStatus(bytes: bytes))
+        } else if let connection = options.connection {
+            try await run(try makeTransport(connection), options: options)
+        } else if let out = options.out, let mm = options.tapeMM {
+            guard let media = mediaFor(widthMM: mm) else { throw ToolError(description: "No TZe tape is \(mm) mm wide.") }
+            let page = testPage(media: media, lengthMM: options.lengthMM, quirksName: options.quirksName)
+            let job = try RasterEncoder(quirks: options.quirks).encode([page], media: media)
+            try Data(job).write(to: URL(fileURLWithPath: out))
+            print("Wrote \(out): \(media.name), \(page.width) lines, quirks \(options.quirksName), \(job.count) bytes")
         }
     }
 } catch {

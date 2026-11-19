@@ -62,3 +62,34 @@ Status reply with 24 mm white/black laminated tape, ready:
 
 Default: `.spec`. Both presets print, and only `.spec` sends the media type, which
 lets the printer refuse a job made for the wrong tape.
+
+## Bluetooth (observed, 2026-11-19)
+
+The P710BT is Bluetooth 2.1 + EDR Classic. Its SDP records list two RFCOMM channels:
+
+| RFCOMM channel | What it speaks | Use |
+| --- | --- | --- |
+| 1 | Apple iAP2: sends `FF 55 02 00 EE 10` (link detect) repeatedly and ignores raster commands | iOS/iPadOS through ExternalAccessory (MFi) |
+| 2 | Plain serial: the raster protocol, same bytes as USB | macOS through IOBluetooth |
+
+- On channel 2, a status request returns the same 32-byte reply as over USB, and a
+  `.spec` test page (213 lines, 2394 bytes) printed with the same status flow:
+  phase change to printing, then "printing completed" about 8 s after sending.
+- The serial port macOS creates after pairing (`/dev/cu.brothersPT-P710BLabelPr`) opens
+  channel 1, so it gets no status reply. Open channel 2 with IOBluetooth instead.
+- Brother's user guide says the printer "does not support Bluetooth connections for
+  computers"; that's Brother's software, not the radio.
+- The printer takes one Bluetooth connection at a time. While a Mac holds a channel,
+  phones and tablets can't find it, and the other way round.
+- macOS kills any process that uses IOBluetooth without `NSBluetoothAlwaysUsageDescription`
+  in its Info.plist (checked against the app that launched it).
+
+## USB with IOUSBHost (observed, 2026-11-19)
+
+- macOS configures the printer on plug-in (configuration 1) and publishes
+  `IOUSBHostInterface@0`, class 07h (printer). No driver claims it, so an app can
+  open it without a print queue.
+- Matching the interface needs `bConfigurationValue = 1` as well as the interface
+  number; without it, IOKit finds nothing.
+- A `.spec` test page printed through `USBTransport` with the same status flow as
+  Bluetooth, "printing completed" about 7.5 s after sending.
