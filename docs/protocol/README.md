@@ -48,8 +48,9 @@ Status reply with 24 mm white/black laminated tape, ready:
   reports it. Pressing the power button (or turning the printer off and on)
   clears it; the next status reply is ready with no errors.
 - Cover open: the printer reports **no media** (error 1 bit 0, width 0, type 0),
-  not the "cover open" bit in error 2. A status reply can't tell an open cover from
-  a missing cassette.
+  not the "cover open" bit in error 2. No cassette with the cover closed gives the
+  identical reply, so a status reply can't tell an open cover from a missing
+  cassette.
 
 ```
 80 20 42 30 76 30 00 00 01 00 00 00 01 00 00 00 00 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00
