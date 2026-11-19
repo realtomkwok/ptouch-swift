@@ -25,7 +25,7 @@ a field of `EncoderQuirks`; the `.ptouch` preset reproduces ptouch, `.spec` foll
 | `ESC i A` cut each N labels | not supported on P710BT (§3) | sent as `01` whenever auto cut is on |
 | Compressed raster line over 16 bytes | sent as one 17-byte literal (§4 "M") | sent as is (up to 21 bytes seen) |
 
-Which preset the real P710BT prefers is unverified on hardware.
+Both presets print on a real P710BT; see below.
 
 ## Observed on a real PT-P710BT (USB, 2026-11-19)
 
@@ -41,3 +41,15 @@ Status reply with 24 mm white/black laminated tape, ready:
   "printing completed" (type `01h`). Offset 15 echoes the "ESC i M" mode (`40h`, auto cut).
 - A job encoded with the `.spec` quirks printed without error: the printer accepts
   media type `01h` in "ESC i z" and doesn't need "ESC i A".
+- A job encoded with the `.ptouch` quirks also printed without error.
+- Wrong tape: a 12 mm `.spec` job with 24 mm tape loaded is rejected before printing
+  with "error occurred" (type `02h`) and error 2 bit 0 (wrong media, `09h` = `01h`). The
+  error stays latched: a later invalidate + initialize + status request still
+  reports it.
+
+```
+80 20 42 30 76 30 00 00 00 01 18 01 01 00 00 40 00 00 02 01 00 00 00 00 01 08 00 00 00 00 00 00
+```
+
+Default: `.spec`. Both presets print, and only `.spec` sends the media type, which
+lets the printer refuse a job made for the wrong tape.
