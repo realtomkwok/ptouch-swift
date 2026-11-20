@@ -104,3 +104,8 @@ The P710BT is Bluetooth 2.1 + EDR Classic. Its SDP records list two RFCOMM chann
   "printing completed" about 7.6 s after sending.
 - No entitlement is needed for development builds. App Store release needs Brother
   to approve the app for the accessory (MFi).
+- Apple's accessory picker (`showBluetoothAccessoryPicker`) never lists the P710BT,
+  with or without a name filter, paired or forgotten. Only iOS can connect it, from
+  Settings › Bluetooth (PIN 0000 the first time) or Control Centre. After a power
+  cycle it reconnects the same way, and `EAAccessoryDidConnect` fires once it's
+  back.
