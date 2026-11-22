@@ -121,6 +121,30 @@ struct PrinterProblemTests {
         #expect(try PrinterStatus(bytes: reply(width: 0, kind: 0)).problems == [.noTape])
     }
 
+    @Test("Empty cassette bay reads as no tape, with the load-a-tape advice")
+    func emptyBay() throws {
+        let s = try PrinterStatus(bytes: reply(error1: 0x01, width: 0, kind: 0x00, statusType: 0x02))
+        #expect(s.problems == [.noTape])
+        #expect(PrinterProblem.noTape.recovery.contains("tape cassette is in the printer"))
+    }
+
+    @Test("No-media error that sticks after a 12 mm cassette goes in needs a restart")
+    func stuckNoMedia() throws {
+        let bytes: [UInt8] = [
+            0x80, 0x20, 0x42, 0x30, 0x76, 0x30, 0x00, 0x00, 0x01, 0x00, 0x0C, 0x01, 0x01, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]
+        let s = try PrinterStatus(bytes: bytes)
+        #expect(s.errors == .noMedia)
+        #expect(s.mediaWidthMM == 12)
+        #expect(s.loadedMedia() == .tze12mm)
+        #expect(s.problems == [.needsRestart])
+        #expect(s.problem(printing: .tze12mm) == .needsRestart)
+        #expect(PrinterProblem.needsRestart.title == "The printer needs a restart")
+        #expect(PrinterProblem.needsRestart.recovery.contains("power button twice"))
+        #expect(PrinterProblem.needsRestart.recovery.contains("off and on"))
+    }
+
     @Test func incompatibleTape() throws {
         #expect(try PrinterStatus(bytes: reply(kind: 0xFF)).problems == [.unsupportedTape])
     }

@@ -4,6 +4,10 @@
 public enum PrinterProblem: Sendable, Hashable, CaseIterable {
     /// No tape, or the cover is open: the P710BT reports both as "no media".
     case noTape
+    /// The printer still says "no media" although it reports a tape, which
+    /// happens when a cassette goes in after a job was sent with none loaded.
+    /// Only a restart clears it.
+    case needsRestart
     case cutterJam
     case weakBatteries
     case wrongPowerAdapter
@@ -16,6 +20,7 @@ public enum PrinterProblem: Sendable, Hashable, CaseIterable {
     public var title: String {
         switch self {
         case .noTape: "No tape detected"
+        case .needsRestart: "The printer needs a restart"
         case .cutterJam: "The cutter is jammed"
         case .weakBatteries: "The battery is low"
         case .wrongPowerAdapter: "Wrong power adapter"
@@ -30,6 +35,7 @@ public enum PrinterProblem: Sendable, Hashable, CaseIterable {
     public var recovery: String {
         switch self {
         case .noTape: "Check that a tape cassette is in the printer and the cover is closed."
+        case .needsRestart: "The printer still thinks the tape is missing. Press its power button twice, or switch it off and on, then try again."
         case .cutterJam: "Turn the printer off, open the cover and clear any tape caught in the cutter."
         case .weakBatteries: "Charge the printer or plug in its power adapter."
         case .wrongPowerAdapter: "Use the power adapter that came with the printer."
@@ -46,7 +52,10 @@ public extension PrinterStatus {
     var problems: [PrinterProblem] {
         var result: [PrinterProblem] = []
         if errors.contains(.coverOpen) { result.append(.coverOpen) }
-        if errors.contains(.noMedia) { result.append(.noTape) }
+        if errors.contains(.noMedia) {
+            // A tape is reported but the error stays: the printer is stuck.
+            result.append(mediaWidthMM != 0 ? .needsRestart : .noTape)
+        }
         if errors.contains(.cutterJam) { result.append(.cutterJam) }
         if errors.contains(.overheating) { result.append(.overheating) }
         if errors.contains(.highVoltageAdapter) { result.append(.wrongPowerAdapter) }
