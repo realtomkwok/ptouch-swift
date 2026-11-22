@@ -1,0 +1,20 @@
+{
+  "name": "precut-high-resolution",
+  "mediaID": 259,
+  "labels": [
+    "precut-high-resolution.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": true,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true,
+    "preCut": true
+  },
+  "quirks": "ptouch",
+  "expected": "precut-high-resolution.bin"
+}

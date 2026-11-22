@@ -28,6 +28,21 @@ public struct PrintOptions: Sendable, Hashable {
     public var feedAfterLastLabel: Bool
     /// Print the whole job this many times, as extra pages.
     public var copies: Int
+    /// Feed and cut the tape before the first label, so the label starts at a
+    /// fresh cut edge with no blank leader.
+    ///
+    /// The Raster Command Reference has no pre-cut command or bit. This sends a
+    /// complete print job with zero raster lines ahead of the real job
+    /// (§2.1 "Print data overview": invalidate, "ESC @", "ESC i a", "ESC i z"
+    /// with {n5..n8} = 0, "ESC i M" auto cut, "ESC i K" no chain printing,
+    /// "ESC i d", "M"; no raster data), ended with "Control-Z" (§4 "Control-Z":
+    /// print with feeding). With auto cut on and chain printing off, the printer
+    /// feeds the tape between the print head and the cutter and cuts it off.
+    ///
+    /// The pre-cut job always uses auto cut, no mirroring, no special tape,
+    /// standard resolution and the 2 mm default margin, whatever the label
+    /// options say. Only `compression` is shared with the labels. Default off.
+    public var preCut: Bool
 
     public init(
         autoCut: Bool = true,
@@ -38,7 +53,8 @@ public struct PrintOptions: Sendable, Hashable {
         marginMM: Double = 2.0,
         compression: Compression = .tiff,
         feedAfterLastLabel: Bool = true,
-        copies: Int = 1
+        copies: Int = 1,
+        preCut: Bool = false
     ) {
         self.autoCut = autoCut
         self.mirror = mirror
@@ -49,6 +65,7 @@ public struct PrintOptions: Sendable, Hashable {
         self.compression = compression
         self.feedAfterLastLabel = feedAfterLastLabel
         self.copies = copies
+        self.preCut = preCut
     }
 }
 
@@ -123,6 +140,7 @@ public struct RasterEncoder: Sendable {
 
     /// Encodes a job: one page per label (repeated `copies` times), each ended
     /// by "FF" except the last, which ends with "Control-Z" when feeding.
+    /// With `options.preCut`, a zero-line feed-and-cut job comes first.
     public func encode(_ labels: [LabelBitmap], media: Media, options: PrintOptions = PrintOptions()) throws -> [UInt8] {
         guard !labels.isEmpty else { throw EncodingError.noLabels }
         guard model.supportedMedia.contains(media) else { throw EncodingError.unsupportedMedia(id: media.id) }
@@ -158,8 +176,13 @@ public struct RasterEncoder: Sendable {
         out.append(contentsOf: repeatElement(0x00, count: quirks.invalidateByteCount)) // NULL Invalidate
         out.append(contentsOf: [0x1B, 0x40]) // ESC @ Initialize
 
+        if options.preCut {
+            appendPreCut(to: &out, media: media, compression: options.compression)
+        }
+
         for (index, page) in pages.enumerated() {
-            appendControlCodes(to: &out, page: page, index: index, media: media, options: options, marginDots: marginDots)
+            appendControlCodes(
+                to: &out, rasterLines: page.width, index: index, media: media, options: options, marginDots: marginDots)
             appendRaster(to: &out, page: page, media: media, compression: options.compression)
             // (4) Print command (§4 "FF", "Control-Z").
             let isLast = index == pages.count - 1
@@ -168,16 +191,30 @@ public struct RasterEncoder: Sendable {
         return out
     }
 
+    // Pre-cut: a job of its own with no raster lines (see `PrintOptions.preCut`).
+    private func appendPreCut(to out: inout [UInt8], media: Media, compression: Compression) {
+        // (1) Initialization commands (§2.1), as for any job.
+        out.append(contentsOf: repeatElement(0x00, count: quirks.invalidateByteCount))
+        out.append(contentsOf: [0x1B, 0x40])
+        // (2) Control codes with fixed settings; (3) no raster data.
+        let options = PrintOptions(compression: compression)
+        let marginDots = dots(fromMillimetres: options.marginMM, dpi: options.resolution.feedDPI)
+        appendControlCodes(
+            to: &out, rasterLines: 0, index: 0, media: media, options: options, marginDots: marginDots)
+        // (4) "Control-Z": print with feeding, which cuts (§4).
+        out.append(0x1A)
+    }
+
     // (2) Control codes, sent at the start of every page (§2.1).
     private func appendControlCodes(
-        to out: inout [UInt8], page: LabelBitmap, index: Int, media: Media, options: PrintOptions, marginDots: Int
+        to out: inout [UInt8], rasterLines: Int, index: Int, media: Media, options: PrintOptions, marginDots: Int
     ) {
         // ESC i a 01h: switch to raster mode.
         out.append(contentsOf: [0x1B, 0x69, 0x61, 0x01])
 
         // ESC i z: print information.
         let piKind: UInt8 = 0x02, piWidth: UInt8 = 0x04, piRecover: UInt8 = 0x80
-        let rasterCount = UInt32(page.width)
+        let rasterCount = UInt32(rasterLines)
         out.append(contentsOf: [0x1B, 0x69, 0x7A])
         out.append(contentsOf: [
             piRecover | piWidth | piKind,

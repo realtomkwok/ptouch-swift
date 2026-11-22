@@ -131,6 +131,8 @@ class Fixture:
     # High resolution doubles the feed resolution. PTouchKit takes the bitmap at
     # the print resolution, so its input repeats every column twice.
     high_resolution: bool = False
+    # ptouch's --precut: a zero-line feed-and-cut job ahead of the labels.
+    precut: bool = False
 
     def options(self) -> dict:
         """Job options in PTouchKit terms, written to the fixture JSON."""
@@ -144,6 +146,8 @@ class Fixture:
             "marginMM": kw.get("margin_mm", 2.0),
             "compression": "none" if self.printer_kwargs.get("use_compression") is False else "tiff",
             "feedAfterLastLabel": kw.get("feed", True),
+            # Only written when set, so the older fixtures stay unchanged.
+            **({"preCut": True} if self.precut else {}),
         }
 
 
@@ -156,9 +160,12 @@ def run_ptouch(fx: Fixture) -> bytes:
     if fx.high_resolution:
         kwargs["high_resolution"] = True
     if fx.multi:
-        printer.print_multi(labels, **kwargs)
+        printer.print_multi(labels, precut=fx.precut, **kwargs)
     else:
         assert len(labels) == 1
+        # print() has no precut argument; ptouch's CLI calls precut() first.
+        if fx.precut:
+            printer.precut(labels[0].tape)
         printer.print(labels[0], **kwargs)
     return bytes(conn.data)
 
@@ -193,6 +200,15 @@ def fixtures() -> list[Fixture]:
                 print_kwargs={"chain": True}),
         Fixture("multi-2-no-compression", 260, [pattern(rng, 25, 112) for _ in range(2)], multi=True,
                 printer_kwargs={"use_compression": False}),
+    ]
+
+    # Pre-cut. Appended last so the random bitmaps above don't change.
+    out += [
+        Fixture("precut-single", 259, base(), precut=True),
+        Fixture("precut-multi-3", 259, [pattern(rng, 30, pins12) for _ in range(3)], multi=True, precut=True),
+        Fixture("precut-no-compression", 259, base(), printer_kwargs={"use_compression": False}, precut=True),
+        # The pre-cut job stays at standard resolution; only the label is high resolution.
+        Fixture("precut-high-resolution", 259, base(), high_resolution=True, precut=True),
     ]
     return out
 
