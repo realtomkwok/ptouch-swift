@@ -10,7 +10,11 @@ let package = Package(
         .executable(name: "ptouchkit-testpage", targets: ["ptouchkit-testpage"]),
     ],
     targets: [
-        .target(name: "PTouchKit"),
+        .target(
+            name: "PTouchKit",
+            // Swift on Linux doesn't link the C maths library (round, floor) by itself.
+            linkerSettings: [.linkedLibrary("m", .when(platforms: [.linux]))]
+        ),
         // Transports: macOS USB (IOUSBHost) and Bluetooth (IOBluetooth), iOS ExternalAccessory.
         .target(
             name: "PTouchKitTransports",
