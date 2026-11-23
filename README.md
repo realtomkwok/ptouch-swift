@@ -5,7 +5,20 @@ A platform-independent Swift package for the Brother PT-P710BT label printer
 printer status. It uses Foundation only, so it builds on Linux as well as on
 Apple platforms. Transports (USB, Bluetooth, network) are supplied by the host.
 
-Status: early. Model and media tables, the raster job encoder (byte-for-byte with ptouch on 22 golden jobs) and status parsing are in. Transports come next.
+Status: works on a real PT-P710BT. In the package:
+
+- **PTouchKit** (Foundation only, Linux too): model and tape tables, the raster
+  job encoder (byte for byte with ptouch on 22 golden jobs), status parsing,
+  printer problems with recovery text (including "restart the printer" when
+  "no tape" sticks after a cassette goes in), and an optional pre-cut that
+  feeds and cuts the tape before the first label.
+- **PTouchKitTransports** (Apple platforms): macOS USB (IOUSBHost) and
+  Bluetooth RFCOMM (IOBluetooth), and iOS ExternalAccessory. Each one is a
+  `PrinterTransport`; hosts can supply their own.
+- **ptouchkit-testpage**: a command-line tool that prints a test page, for
+  hardware smoke tests.
+
+CI builds and tests on Linux (the `swift` container) and macOS for every pull request.
 
 ## How it's written
 
@@ -21,8 +34,12 @@ PTouchKit. `reference/ptouch` is a read-only git submodule; never edit it.
 
 ## Layout
 
-- `Package.swift`, `Sources/`, `Tests/` - the PTouchKit package (coming)
+- `Sources/PTouchKit/` - encoder, status and tables (platform-independent)
+- `Sources/PTouchKitTransports/` - USB, Bluetooth and ExternalAccessory transports
+- `Sources/ptouchkit-testpage/` - the test-page tool
+- `Tests/` - unit tests and golden fixtures
 - `Tools/golden/` - generates golden fixtures from `ptouch`
+- `Tools/hardware/` - wraps the test-page tool in an app bundle so macOS lets it use Bluetooth
 - `docs/protocol/` - P710BT raster protocol notes
 - `reference/ptouch/` - git submodule: upstream Python library (read-only)
 
