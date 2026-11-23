@@ -15,7 +15,8 @@ extension GoldenFixture {
             resolution: options.highResolution ? .high : .standard,
             marginMM: options.marginMM,
             compression: options.compression == "none" ? .none : .tiff,
-            feedAfterLastLabel: options.feedAfterLastLabel
+            feedAfterLastLabel: options.feedAfterLastLabel,
+            preCut: options.preCut ?? false
         )
     }
 
@@ -74,6 +75,60 @@ struct RasterEncoderTests {
         let once = try RasterEncoder().encode([label, label, label], media: .tze12mm, options: PrintOptions())
         let thrice = try RasterEncoder().encode([label], media: .tze12mm, options: PrintOptions(copies: 3))
         #expect(once == thrice)
+    }
+
+    @Test("Pre-cut is off by default")
+    func preCutDefaultsOff() throws {
+        #expect(PrintOptions().preCut == false)
+        let label = LabelBitmap(width: 31, height: 70) { x, y in x == y }
+        let plain = try RasterEncoder().encode([label], media: .tze12mm)
+        let explicit = try RasterEncoder().encode([label], media: .tze12mm, options: PrintOptions(preCut: false))
+        #expect(plain == explicit)
+    }
+
+    // The golden fixtures cover ptouch's bytes; this pins the structure with the
+    // spec quirks: the job, then a zero-line job (§2.1) ended with Control-Z (§4).
+    @Test("Pre-cut sends a zero-line feed-and-cut job before the labels")
+    func preCutStructure() throws {
+        let label = LabelBitmap(width: 31, height: 70) { x, y in x == y }
+        let encoder = RasterEncoder(quirks: .spec)
+        let plain = try encoder.encode([label], media: .tze12mm)
+        let cut = try encoder.encode([label], media: .tze12mm, options: PrintOptions(preCut: true))
+
+        let initBytes = [UInt8](repeating: 0, count: 100) + [0x1B, 0x40]
+        #expect(cut.starts(with: initBytes))
+        // The pre-cut job carries its own initialization.
+        let preCut = Array(cut.dropFirst(initBytes.count))
+        #expect(preCut.starts(with: initBytes))
+        let body = Array(preCut.dropFirst(initBytes.count))
+        #expect(body.starts(with: [0x1B, 0x69, 0x61, 0x01]))
+        // ESC i z with {n5..n8} = 0 raster lines.
+        let z = try #require(body.indices.first { body[$0...].starts(with: [0x1B, 0x69, 0x7A]) })
+        #expect(Array(body[(z + 7)..<(z + 11)]) == [0, 0, 0, 0])
+        let end = try #require(body.firstIndex(of: 0x1A))
+        #expect(!body[..<end].contains(0x47) && !body[..<end].contains(0x5A)) // no raster data
+        // Then the real job, exactly as without pre-cut.
+        #expect(Array(body[(end + 1)...]) == Array(plain.dropFirst(initBytes.count)))
+    }
+
+    @Test("Pre-cut ignores the label options but keeps compression")
+    func preCutFixedSettings() throws {
+        let label = LabelBitmap(width: 62, height: 70) { x, y in x == y }
+        let encoder = RasterEncoder(quirks: .spec)
+        let options = PrintOptions(
+            autoCut: false, mirror: true, chainPrinting: true, specialTape: true, marginMM: 5,
+            compression: .none, preCut: true)
+        let bytes = try encoder.encode([label], media: .tze12mm, options: options)
+        let first1A = try #require(bytes.firstIndex(of: 0x1A))
+        let preCut = Array(bytes[102..<first1A])
+        #expect(preCut.contains(0x4D)) // sanity
+        let m = try #require(preCut.indices.first { preCut[$0...].starts(with: [0x1B, 0x69, 0x4D]) })
+        #expect(preCut[m + 3] == 0x40) // auto cut, no mirror
+        let k = try #require(preCut.indices.first { preCut[$0...].starts(with: [0x1B, 0x69, 0x4B]) })
+        #expect(preCut[k + 3] == 0x08) // no chain printing, standard resolution, no special tape
+        let d = try #require(preCut.indices.first { preCut[$0...].starts(with: [0x1B, 0x69, 0x64]) })
+        #expect(Array(preCut[(d + 3)...(d + 4)]) == [0x0E, 0x00]) // 2 mm
+        #expect(Array(preCut.suffix(2)) == [0x4D, 0x00]) // compression follows the job
     }
 
     @Test func rejectsWrongHeight() {

@@ -109,3 +109,14 @@ The P710BT is Bluetooth 2.1 + EDR Classic. Its SDP records list two RFCOMM chann
   Settings › Bluetooth (PIN 0000 the first time) or Control Centre. After a power
   cycle it reconnects the same way, and `EAAccessoryDidConnect` fires once it's
   back.
+
+## Pre-cut
+
+The manual has no pre-cut command. `PrintOptions.preCut` sends a complete job
+with no raster lines ahead of the real one, the same bytes as ptouch's
+`--precut`: invalidate and `ESC @` (§2.1), `ESC i a`, `ESC i z` with {n5..n8} =
+0, `ESC i M` auto cut, `ESC i K` no chain printing, `ESC i d` 2 mm, `M`, then
+`Control-Z` (§4), so the printer feeds the tape between head and cutter and
+cuts it. The labels follow as usual. The pre-cut job ignores the label
+options except compression. The `precut-*` golden fixtures cover it; it has
+not been printed on hardware yet.

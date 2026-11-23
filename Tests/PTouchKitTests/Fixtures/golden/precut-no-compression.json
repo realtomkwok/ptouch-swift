@@ -1,0 +1,20 @@
+{
+  "name": "precut-no-compression",
+  "mediaID": 259,
+  "labels": [
+    "precut-no-compression.0.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "none",
+    "feedAfterLastLabel": true,
+    "preCut": true
+  },
+  "quirks": "ptouch",
+  "expected": "precut-no-compression.bin"
+}

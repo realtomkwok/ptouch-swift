@@ -1,0 +1,22 @@
+{
+  "name": "precut-multi-3",
+  "mediaID": 259,
+  "labels": [
+    "precut-multi-3.0.pbm",
+    "precut-multi-3.1.pbm",
+    "precut-multi-3.2.pbm"
+  ],
+  "options": {
+    "autoCut": true,
+    "mirror": false,
+    "chainPrinting": false,
+    "specialTape": false,
+    "highResolution": false,
+    "marginMM": 2.0,
+    "compression": "tiff",
+    "feedAfterLastLabel": true,
+    "preCut": true
+  },
+  "quirks": "ptouch",
+  "expected": "precut-multi-3.bin"
+}

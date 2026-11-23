@@ -12,6 +12,8 @@ struct GoldenFixture: Decodable, CustomTestStringConvertible, Sendable {
         let marginMM: Double
         let compression: String
         let feedAfterLastLabel: Bool
+        /// Only present in the pre-cut fixtures.
+        let preCut: Bool?
     }
 
     let name: String

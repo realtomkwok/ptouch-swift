@@ -23,6 +23,10 @@
     "content-long",
     "multi-3",
     "multi-3-chain",
-    "multi-2-no-compression"
+    "multi-2-no-compression",
+    "precut-single",
+    "precut-multi-3",
+    "precut-no-compression",
+    "precut-high-resolution"
   ]
 }
