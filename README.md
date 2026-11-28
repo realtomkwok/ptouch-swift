@@ -1,4 +1,5 @@
 # PTouchKit
+**[Work in Progress]**
 
 A platform-independent Swift package for the Brother PT-P710BT label printer
 (and its PT-E550W/P750W siblings). It builds the raster print job and parses
@@ -22,12 +23,12 @@ CI builds and tests on Linux (the `swift` container) and macOS for every pull re
 
 ## How it's written
 
+Although it's hugely inspired by [`ptouch`](https://github.com/nbuchwitz/ptouch) Python library, 
 PTouchKit is written from Brother's public *Raster Command Reference* for the
 PT-E550W/P750W/P710BT (`cv_pte550wp750wp710bt_eng_raster_102.pdf`). Code
 cites the spec section it implements.
 
-The [`ptouch`](https://github.com/nbuchwitz/ptouch) Python library
-(LGPL-2.1-or-later) is used only as a black-box test oracle: `Tools/golden/`
+The `ptouch` Python library (LGPL-2.1-or-later) is used only as a black-box test oracle: `Tools/golden/`
 runs it to produce expected bytes, and the tests compare PTouchKit's output
 against them byte for byte. Don't copy ptouch's code or structure into
 PTouchKit. `reference/ptouch` is a read-only git submodule; never edit it.
